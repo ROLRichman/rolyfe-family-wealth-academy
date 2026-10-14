@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080b10">
+  <title>RO’Lyfe Family Wealth & Trading Academy™</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#" aria-label="RO’Lyfe Academy home">
+      <span class="brand-mark">R</span>
+      <span><strong>RO’Lyfe</strong><small>FAMILY WEALTH ACADEMY</small></span>
+    </a>
+    <span class="mode-pill"><span class="dot"></span> SIMULATION MODE</span>
+  </header>
+
+  <main class="shell">
+    <section class="hero">
+      <div>
+        <p class="eyebrow">LEARN • PRACTICE • REVIEW • IMPROVE</p>
+        <h1>Build skill before risking capital.</h1>
+        <p class="hero-copy">A private family workspace for market education, simulated trading, risk discipline, and long-term wealth habits.</p>
+      </div>
+      <div class="hero-card">
+        <span class="muted">Virtual buying power</span>
+        <strong id="balanceDisplay">$10,000.00</strong>
+        <span class="small-note">Practice funds only — not real money.</span>
+      </div>
+    </section>
+
+    <nav class="tabs" aria-label="Main sections">
+      <button class="tab active" data-view="overview">Overview</button>
+      <button class="tab" data-view="simulator">Trade Lab</button>
+      <button class="tab" data-view="journal">Journal</button>
+      <button class="tab" data-view="learn">Learn</button>
+    </nav>
+
+    <section class="view active" id="view-overview">
+      <div class="section-heading">
+        <div><p class="eyebrow">YOUR WORKSPACE</p><h2>Practice with a plan.</h2></div>
+        <span class="tag">Phase 1 foundation</span>
+      </div>
+      <div class="metric-grid">
+        <article class="metric-card"><span class="muted">Virtual cash</span><strong id="cashMetric">$10,000.00</strong><small>Available for simulated buys</small></article>
+        <article class="metric-card"><span class="muted">Open positions</span><strong id="positionsMetric">0</strong><small>Based on this device’s saved session</small></article>
+        <article class="metric-card"><span class="muted">Closed practice trades</span><strong id="tradesMetric">0</strong><small>Review quality, not just profit</small></article>
+        <article class="metric-card"><span class="muted">Learning focus</span><strong>Risk first</strong><small>Thesis • entry • invalidation • review</small></article>
+      </div>
+
+      <div class="two-col">
+        <article class="panel">
+          <div class="panel-title"><h3>Before every practice trade</h3><span class="icon">✓</span></div>
+          <ul class="checklist">
+            <li>Write down why the setup may work.</li>
+            <li>Choose an entry and an invalidation level.</li>
+            <li>Calculate risk before choosing position size.</li>
+            <li>Record what happened and what you learned.</li>
+          </ul>
+        </article>
+        <article class="panel">
+          <div class="panel-title"><h3>Family learning challenge</h3><span class="icon">↗</span></div>
+          <p class="muted">Each learner starts with a virtual $10,000 balance. Compare consistency, risk control, and the quality of decisions after a sample of practice trades.</p>
+          <button class="primary-btn" data-jump="simulator">Open Trade Lab</button>
+        </article>
+      </div>
+      <p class="disclaimer">Educational simulator only. No brokerage connection, live prices, or investment recommendations are provided in this foundation build.</p>
+    </section>
+
+    <section class="view" id="view-simulator">
+      <div class="section-heading"><div><p class="eyebrow">VIRTUAL EXECUTION</p><h2>Trade Lab</h2></div><span class="tag">No real orders</span></div>
+      <div class="two-col">
+        <article class="panel">
+          <h3>Record a simulated stock trade</h3>
+          <form id="tradeForm">
+            <label for="symbol">Ticker symbol</label>
+            <input id="symbol" name="symbol" placeholder="e.g. AAPL" maxlength="10" required>
+            <div class="field-row">
+              <div><label for="side">Action</label><select id="side"><option value="buy">Buy / Open long</option><option value="sell">Sell / Close position</option></select></div>
+              <div><label for="shares">Shares</label><input id="shares" type="number" min="1" step="1" value="1" required></div>
+            </div>
+            <label for="price">Practice price ($)</label>
+            <input id="price" type="number" min="0.01" step="0.01" placeholder="Enter a hypothetical price" required>
+            <div class="field-row">
+              <div><label for="stop">Invalidation / stop ($)</label><input id="stop" type="number" min="0.01" step="0.01" placeholder="Optional"></div>
+              <div><label for="riskPct">Risk budget (%)</label><input id="riskPct" type="number" min="0.1" max="5" step="0.1" value="1"></div>
+            </div>
+            <label for="thesis">Trade thesis and plan</label>
+            <textarea id="thesis" rows="3" placeholder="What is the setup? What would prove the idea wrong?"></textarea>
+            <div class="risk-preview" id="riskPreview">Enter a price and stop to preview estimated risk.</div>
+            <button class="primary-btn" type="submit">Record simulated trade</button>
+          </form>
+        </article>
+        <article class="panel">
+          <h3>Open practice positions</h3>
+          <div id="positionsList" class="empty-state">No open positions yet. Record a simulated buy to begin.</div>
+          <div class="rule-box"><strong>Simulation rule</strong><p>This starter uses manually entered hypothetical prices. It does not fetch market data and does not send orders to a broker.</p></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="view" id="view-journal">
+      <div class="section-heading"><div><p class="eyebrow">REFLECTION LOOP</p><h2>Trade Journal</h2></div><span class="tag">Saved on this device</span></div>
+      <div class="two-col">
+        <article class="panel">
+          <h3>Daily notes</h3>
+          <label for="dailyNotes">What did you learn today?</label>
+          <textarea id="dailyNotes" rows="8" placeholder="Market observations, mistakes, good decisions, questions..."></textarea>
+          <button id="saveNotes" class="primary-btn" type="button">Save journal notes</button>
+          <p class="small-note" id="saveStatus">Notes are stored locally in this browser only.</p>
+        </article>
+        <article class="panel">
+          <h3>Trade history</h3>
+          <div id="historyList" class="empty-state">No practice trades recorded yet.</div>
+          <button id="resetData" class="danger-btn" type="button">Reset local practice data</button>
+        </article>
+      </div>
+    </section>
+
+    <section class="view" id="view-learn">
+      <div class="section-heading"><div><p class="eyebrow">LEARNING CENTER</p><h2>Core lessons</h2></div><span class="tag">Starter curriculum</span></div>
+      <div class="lesson-grid">
+        <article class="lesson-card"><span class="lesson-num">01</span><h3>Investing vs. trading</h3><p>Understand time horizon, ownership, speculation, and why they should not be confused.</p><span class="lesson-status">Start here</span></article>
+        <article class="lesson-card"><span class="lesson-num">02</span><h3>Position sizing</h3><p>Estimate potential loss before deciding how many shares to practice with.</p><span class="lesson-status">Risk basics</span></article>
+        <article class="lesson-card"><span class="lesson-num">03</span><h3>Entry and invalidation</h3><p>Define the idea, the entry condition, and the price or condition that disproves it.</p><span class="lesson-status">Plan the trade</span></article>
+        <article class="lesson-card"><span class="lesson-num">04</span><h3>Review without hindsight</h3><p>Record the plan before the outcome, then assess whether you followed your rules.</p><span class="lesson-status">Build consistency</span></article>
+      </div>
+      <div class="rule-box"><strong>Next phases</strong><p>Historical replay with licensed data, options simulation, family learner accounts, shared progress, and eventual connection to the RO’Lyfe Tactical Intelligence Center will be added only after the foundation is tested.</p></div>
+    </section>
+    <footer><span>RO’Lyfe Family Wealth & Trading Academy™</span><span>Learn first. Protect capital. Build with purpose.</span></footer>
+  </main>
+  <script src="js/app.js"></script>
+</body>
+</html>
