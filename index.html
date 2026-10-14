@@ -1,0 +1,62 @@
+<!-- RO'Lyfe Advanced Mode -->
+<section class="panel advanced-toolbar">
+  <div>
+    <p class="eyebrow">RO'LYFE INTELLIGENCE</p>
+    <h3>Advanced Trading Workspace</h3>
+    <p class="muted">Explore charts, options chains, and trade planning.</p>
+  </div>
+  <label class="advanced-toggle">
+    <input type="checkbox" id="advancedMode">
+    Enable Advanced Mode
+  </label>
+  <div class="advanced-actions">
+    <button class="primary-btn" id="openChart" type="button">Open Pop-up Chart</button>
+    <button class="primary-btn" id="openOptions" type="button">Open Options Chain</button>
+  </div>
+</section>
+
+<!-- Floating AI helper -->
+<button id="aiLauncher" class="ai-launcher" type="button"
+  aria-label="Open RO'Lyfe AI assistant">AI</button>
+
+<section id="aiPanel" class="ai-panel" hidden>
+  <div class="ai-header">
+    <strong>RO'Lyfe AI Assistant</strong>
+    <button id="closeAI" type="button" aria-label="Close assistant">×</button>
+  </div>
+  <p class="small-note">Educational helper — not financial advice.</p>
+  <div id="aiMessages" class="ai-messages" aria-live="polite">
+    <p><strong>RO'Lyfe AI:</strong> Ask about risk, position sizing, chart patterns, or your trading journal.</p>
+  </div>
+  <form id="aiForm">
+    <input id="aiQuestion" placeholder="Ask a trading question..." required>
+    <button class="primary-btn" type="submit">Ask</button>
+  </form>
+</section>
+
+<!-- Chart pop-up -->
+<dialog id="chartDialog" class="chart-dialog">
+  <div class="dialog-heading">
+    <h3>Chart Workspace</h3>
+    <button id="closeChart" type="button">Close</button>
+  </div>
+  <label for="chartSymbol">Ticker symbol</label>
+  <input id="chartSymbol" value="SPY" maxlength="12">
+  <label for="chartTimeframe">Timeframe</label>
+  <select id="chartTimeframe">
+    <option value="1D">1 Day</option>
+    <option value="5D">5 Days</option>
+    <option value="1M">1 Month</option>
+    <option value="6M">6 Months</option>
+    <option value="1Y">1 Year</option>
+  </select>
+  <button id="loadChart" class="primary-btn" type="button">Load External Chart</button>
+  <p class="small-note">The chart opens an external website. Availability and data are controlled by that provider.</p>
+</dialog>
+
+<!-- Advanced options -->
+<section id="advancedPanel" class="panel advanced-panel" hidden>
+  <h3>Advanced Practice Tools</h3>
+  <p>Review your planned entry, invalidation level, position size, and maximum hypothetical risk before recording a practice trade.</p>
+  <p class="small-note">Options are not simulated in this version. Review an external options chain for educational purposes only.</p>
+</section>
