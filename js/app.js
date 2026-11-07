@@ -1,104 +1,157 @@
-// RO'Lyfe Academy — Advanced UI
-(() => {
-  const $ = (id) => document.getElementById(id);
+const STORAGE_KEY = "rolyfeAcademyFoundationV1";
+const DEFAULT_STATE = { cash: 10000, positions: [], history: [], notes: "" };
+let state = loadState();
 
-  // Navigation: each tab must open its matching section.
-  document.querySelectorAll(".tab").forEach((button) => {
-    button.addEventListener("click", () => {
-      const name = button.dataset.view;
-      document.querySelectorAll(".view").forEach((view) => {
-        view.classList.toggle("active", view.id === `view-${name}`);
-      });
-      document.querySelectorAll(".tab").forEach((tab) => {
-        tab.classList.toggle("active", tab === button);
-      });
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    });
-  });
+const $ = (id) => document.getElementById(id);
+const money = (value) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(Number(value) || 0);
 
-  // Advanced mode
-  $("advancedMode")?.addEventListener("change", (event) => {
-    $("advancedPanel").hidden = !event.target.checked;
-  });
+function loadState() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (saved && typeof saved.cash === "number") return { ...DEFAULT_STATE, ...saved };
+  } catch (error) {}
+  return structuredClone(DEFAULT_STATE);
+}
+function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); render(); }
 
-  // External chart pop-up
-  $("openChart")?.addEventListener("click", () => {
-    $("chartDialog").showModal();
-  });
+function showView(name) {
+  document.querySelectorAll(".view").forEach(el => el.classList.toggle("active", el.id === `view-${name}`));
+  document.querySelectorAll(".tab").forEach(el => el.classList.toggle("active", el.dataset.view === name));
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+document.querySelectorAll(".tab").forEach(btn => btn.addEventListener("click", () => showView(btn.dataset.view)));
+document.querySelectorAll("[data-jump]").forEach(btn => btn.addEventListener("click", () => showView(btn.dataset.jump)));
 
-  $("closeChart")?.addEventListener("click", () => {
-    $("chartDialog").close();
-  });
+function render() {
+  $("balanceDisplay").textContent = money(state.cash);
+  $("cashMetric").textContent = money(state.cash);
+  $("positionsMetric").textContent = state.positions.length;
+  $("tradesMetric").textContent = state.history.length;
+  $("dailyNotes").value = state.notes || "";
 
-  $("loadChart")?.addEventListener("click", () => {
-    const symbol = $("chartSymbol").value.trim().toUpperCase();
-    const timeframe = $("chartTimeframe").value;
-    if (!/^[A-Z0-9.-]{1,12}$/.test(symbol)) {
-      alert("Enter a valid ticker symbol.");
+  const positions = $("positionsList");
+  if (!state.positions.length) {
+    positions.className = "empty-state";
+    positions.textContent = "No open positions yet. Record a simulated buy to begin.";
+  } else {
+    positions.className = "";
+    positions.innerHTML = state.positions.map(p => `
+      <div class="position">
+        <strong>${escapeHtml(p.symbol)} · ${p.shares} share${p.shares === 1 ? "" : "s"}</strong>
+        <small>Entry ${money(p.price)} · Position value ${money(p.price * p.shares)}</small>
+        <button class="primary-btn" data-close="${p.id}" type="button">Close at a hypothetical price</button>
+      </div>`).join("");
+    positions.querySelectorAll("[data-close]").forEach(btn => btn.addEventListener("click", () => closePosition(btn.dataset.close)));
+  }
+
+  const history = $("historyList");
+  if (!state.history.length) {
+    history.className = "empty-state";
+    history.textContent = "No practice trades recorded yet.";
+  } else {
+    history.className = "";
+    history.innerHTML = [...state.history].reverse().slice(0, 30).map(t => `
+      <div class="history-item">
+        <strong>${escapeHtml(t.action)} · ${escapeHtml(t.symbol)} · ${t.shares} share${t.shares === 1 ? "" : "s"}</strong>
+        <small>${escapeHtml(t.date)} · ${money(t.price)} per share · ${escapeHtml(t.note || "No reflection added")}</small>
+      </div>`).join("");
+  }
+}
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+}
+
+function updateRiskPreview() {
+  const entry = Number($("price").value);
+  const stop = Number($("stop").value);
+  const shares = Math.max(0, Number($("shares").value));
+  const balance = state.cash;
+  const budgetPct = Math.max(0, Number($("riskPct").value) || 0);
+  const budget = balance * budgetPct / 100;
+  if (!(entry > 0) || !(stop > 0) || !(shares > 0)) {
+    $("riskPreview").textContent = `Risk budget: ${money(budget)}. Add a valid price and stop to estimate planned risk.`;
+    return;
+  }
+  const perShareRisk = Math.abs(entry - stop);
+  const estimatedRisk = perShareRisk * shares;
+  $("riskPreview").textContent = `Estimated planned risk: ${money(estimatedRisk)} (${money(perShareRisk)} per share). Risk budget at ${budgetPct}% of available cash: ${money(budget)}.`;
+}
+["price", "stop", "shares", "riskPct"].forEach(id => $(id).addEventListener("input", updateRiskPreview));
+
+$("tradeForm").addEventListener("submit", (event) => {
+  event.preventDefault();
+  const symbol = $("symbol").value.trim().toUpperCase().replace(/[^A-Z0-9.-]/g, "");
+  const side = $("side").value;
+  const shares = Math.floor(Number($("shares").value));
+  const price = Number($("price").value);
+  const stop = Number($("stop").value);
+  const thesis = $("thesis").value.trim();
+  if (!symbol || !Number.isInteger(shares) || shares < 1 || !(price > 0)) {
+    alert("Enter a ticker, a whole number of shares, and a valid hypothetical price.");
+    return;
+  }
+  if (stop > 0 && stop >= price) {
+    if (!confirm("For a long position, an invalidation/stop price is usually below the entry. Record this anyway?")) return;
+  }
+  const notional = shares * price;
+  if (side === "buy") {
+    if (notional > state.cash) {
+      alert("This simulated buy exceeds available virtual cash. Reduce shares or the hypothetical price.");
       return;
     }
-    // TradingView chart opens separately; no brokerage connection.
-    const url = new URL("https://www.tradingview.com/chart/");
-    url.searchParams.set("symbol", symbol);
-    url.searchParams.set("interval", ({
-      "1D": "1D", "5D": "60", "1M": "D", "6M": "D", "1Y": "W"
-    })[timeframe] || "D");
-    window.open(url.href, "_blank", "noopener,noreferrer");
-  });
-
-  // External options-chain lookup. Provider may require sign-in.
-  $("openOptions")?.addEventListener("click", () => {
-    const symbol = ($("symbol")?.value || $("chartSymbol")?.value || "SPY")
-      .trim().toUpperCase();
-    const url = "https://www.nasdaq.com/market-activity/stocks/" +
-      encodeURIComponent(symbol.toLowerCase()) + "/option-chain";
-    window.open(url, "_blank", "noopener,noreferrer");
-  });
-
-  // Floating educational assistant — built-in responses, not a live AI service.
-  $("aiLauncher")?.addEventListener("click", () => {
-    $("aiPanel").hidden = false;
-    $("aiQuestion").focus();
-  });
-
-  $("closeAI")?.addEventListener("click", () => {
-    $("aiPanel").hidden = true;
-  });
-
-  $("aiForm")?.addEventListener("submit", (event) => {
-    event.preventDefault();
-    const question = $("aiQuestion").value.trim();
-    if (!question) return;
-
-    const messages = $("aiMessages");
-    const userMessage = document.createElement("p");
-    const userLabel = document.createElement("strong");
-    userLabel.textContent = "You: ";
-    userMessage.append(userLabel, document.createTextNode(question));
-    messages.appendChild(userMessage);
-
-    const q = question.toLowerCase();
-    let answer;
-
-    if (q.includes("risk") || q.includes("stop") || q.includes("position size")) {
-      answer = "Define the price that invalidates your idea, calculate the per-share risk, and size the simulated position so the planned loss stays within your chosen risk budget.";
-    } else if (q.includes("option") || q.includes("call") || q.includes("put")) {
-      answer = "An option is a contract with an expiration date and strike price. Learn the difference between calls and puts, premium, time decay, implied volatility, and maximum possible loss before attempting an options simulation.";
-    } else if (q.includes("journal") || q.includes("review")) {
-      answer = "Record your thesis, entry, invalidation level, planned risk, exit, and whether you followed your rules. Review decision quality separately from profit or loss.";
-    } else if (q.includes("chart") || q.includes("trend") || q.includes("support") || q.includes("resistance")) {
-      answer = "Start with the higher timeframe, mark clear support and resistance, check trend and volume, then define an entry trigger and invalidation condition. No single indicator guarantees an outcome.";
-    } else {
-      answer = "Start with three questions: What is the setup? What would prove the idea wrong? How much virtual capital could be lost if the plan fails? This built-in assistant uses educational rules, not a connected AI model.";
+    state.cash -= notional;
+    state.positions.push({ id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), symbol, shares, price, stop: stop > 0 ? stop : null, thesis });
+    state.history.push({ action: "OPEN", symbol, shares, price, date: new Date().toLocaleString(), note: thesis || "No thesis recorded" });
+  } else {
+    const positionIndex = state.positions.findIndex(p => p.symbol === symbol);
+    if (positionIndex < 0) {
+      alert("No open simulated position with that ticker. Open a position first.");
+      return;
     }
+    const position = state.positions[positionIndex];
+    if (shares > position.shares) {
+      alert(`You have only ${position.shares} simulated share(s) open for ${symbol}.`);
+      return;
+    }
+    state.cash += shares * price;
+    position.shares -= shares;
+    if (position.shares === 0) state.positions.splice(positionIndex, 1);
+    state.history.push({ action: "CLOSE", symbol, shares, price, date: new Date().toLocaleString(), note: thesis || `Closed against recorded entry ${money(position.price)}` });
+  }
+  $("tradeForm").reset();
+  $("shares").value = "1";
+  $("riskPct").value = "1";
+  $("thesis").value = "";
+  updateRiskPreview();
+  saveState();
+  alert("Simulated trade recorded. No real order was placed.");
+});
 
-    const assistantMessage = document.createElement("p");
-    const assistantLabel = document.createElement("strong");
-    assistantLabel.textContent = "RO'Lyfe AI: ";
-    assistantMessage.append(assistantLabel, document.createTextNode(answer));
-    messages.appendChild(assistantMessage);
+function closePosition(id) {
+  const position = state.positions.find(p => p.id === id);
+  if (!position) return;
+  const answer = prompt(`Enter a hypothetical closing price for ${position.symbol} (entry ${money(position.price)}):`);
+  if (answer === null) return;
+  const price = Number(answer);
+  if (!(price > 0)) { alert("Enter a valid price greater than zero."); return; }
+  state.cash += position.shares * price;
+  const pnl = (price - position.price) * position.shares;
+  state.history.push({ action: "CLOSE", symbol: position.symbol, shares: position.shares, price, date: new Date().toLocaleString(), note: `Closed position; simulated price difference ${money(pnl)}` });
+  state.positions = state.positions.filter(p => p.id !== id);
+  saveState();
+}
 
-    $("aiQuestion").value = "";
-    messages.scrollTop = messages.scrollHeight;
-  });
-})();
+$("saveNotes").addEventListener("click", () => {
+  state.notes = $("dailyNotes").value;
+  saveState();
+  $("saveStatus").textContent = "Saved locally on this device at " + new Date().toLocaleTimeString() + ".";
+});
+$("resetData").addEventListener("click", () => {
+  if (!confirm("Reset all local practice balances, positions, trade history, and journal notes on this browser? This cannot be undone.")) return;
+  state = structuredClone(DEFAULT_STATE);
+  saveState();
+  $("saveStatus").textContent = "Local practice data reset.";
+});
+
+render();
+updateRiskPreview();
