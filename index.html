@@ -7,6 +7,7 @@
   <title>RO’Lyfe Family Wealth & Trading Academy™</title>
   <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="rol-engine-identity.css?v=20261113-1">
+  <script src="https://rolrichman.github.io/rolyfe-personal-trading-desk/shared/rolyfe-global-tools.js" defer></script>
 </head>
 <body>
   <header class="topbar">
@@ -197,5 +198,74 @@
   <script src="js/app.js"></script>
   <script src="js/advanced-ui.js"></script>
 <script>(()=>{const root=document.documentElement;document.querySelectorAll('[data-rol-motion-toggle]').forEach(button=>button.addEventListener('click',()=>{const paused=root.classList.toggle('rol-motion-paused');button.setAttribute('aria-pressed',String(paused));button.textContent=paused?'Resume motion':'Pause motion';}));})();</script>
+
+<script>
+(() => {
+  const SUPABASE_URL = "https://ykmdyfbklvuoseqdjnxy.supabase.co";
+  const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlrbWR5ZmJrbHZ1b3NlcWRqbnh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3ODk5OTQsImV4cCI6MjEwODM2NTk5NH0._YEZj2GSnPcLGXmwgj98V_JzXdJIhTmOFoAH9BSia2I";
+  const $ = id => document.getElementById(id);
+  const messages = $("aiMessages");
+  function appendMessage(role, text) {
+    const p=document.createElement("p");
+    p.className=role==="assistant"?"ai-response":"ai-question";
+    p.textContent=(role==="assistant"?"RO’Lyfe AI: ":"You: ")+text;
+    messages.appendChild(p);
+    messages.scrollTop=messages.scrollHeight;
+    return p;
+  }
+  $("aiLauncher")?.addEventListener("click",()=>{$("aiPanel").hidden=false;});
+  $("closeAI")?.addEventListener("click",()=>{$("aiPanel").hidden=true;});
+  $("aiForm")?.addEventListener("submit",async event=>{
+    event.preventDefault();
+    const question=$("aiQuestion").value.trim();
+    if(!question)return;
+    $("aiQuestion").value="";
+    appendMessage("user",question);
+    const pending=appendMessage("assistant","Reviewing the practice account and current learning context…");
+    const button=$("aiForm").querySelector("button[type=submit]");
+    button.disabled=true;
+    try{
+      const positions=Array.isArray(window.rolyfeAcademyState?.positions)?window.rolyfeAcademyState.positions:[];
+      const context=[
+        "RO’Lyfe Family Wealth & Trading Academy.",
+        "This is a local educational simulator with a virtual starting balance of $10,000.",
+        "The app uses manually entered hypothetical prices, no live data, and no brokerage execution.",
+        "Current virtual cash: "+($("cashMetric")?.textContent||"not available")+".",
+        "Open simulated positions: "+(positions.length?JSON.stringify(positions):"No positions supplied."),
+        "Current ticker: "+($("symbol")?.value||"not selected")+".",
+        "Current hypothetical price: "+($("price")?.value||"not supplied")+".",
+        "Current stop/invalidation: "+($("stop")?.value||"not supplied")+".",
+        "Planned shares: "+($("shares")?.value||"not supplied")+".",
+        "Risk budget: "+($("riskPct")?.value||"not supplied")+"%.",
+        "No actual holdings or real account balances are connected."
+      ].join("\n");
+      const language=window.ROLyfeLanguage?.name||localStorage.getItem("rolyfe-ui-language")||"English";
+      const response=await fetch(SUPABASE_URL+"/functions/v1/rol-trading-ai",{
+        method:"POST",
+        headers:{apikey:SUPABASE_ANON,Authorization:"Bearer "+SUPABASE_ANON,"Content-Type":"application/json",Accept:"application/json"},
+        body:JSON.stringify({action:"analyze",question,context,sidekickMode:"coach",language}),
+        cache:"no-store"
+      });
+      const payload=await response.json().catch(()=>({}));
+      if(!response.ok||!payload.answer)throw new Error(payload.error||"The RO’Lyfe AI service is unavailable.");
+      pending.textContent="RO’Lyfe AI: "+payload.answer;
+      if(typeof window.ROLyfeSpeak==="function")window.ROLyfeSpeak(payload.answer);
+    }catch(error){pending.textContent="RO’Lyfe AI: "+(error.message||"Unable to connect to the AI service.");}
+    finally{button.disabled=false;}
+  });
+  window.addEventListener("rol-global-symbol-change",event=>{
+    const raw=String(event.detail?.symbol||"").toUpperCase();
+    if(!raw)return;
+    const clean=raw.split(":").pop().replace(/-USD$/,"");
+    if($("symbol"))$("symbol").value=clean;
+    if($("chartSymbol"))$("chartSymbol").value=clean;
+  });
+  window.addEventListener("rol-language-change",event=>{
+    const language=event.detail?.language?.label||event.detail?.language?.name;
+    if(language&&$("aiQuestion"))$("aiQuestion").placeholder="Ask a trading question · "+language+"…";
+  });
+})();
+</script>
+
 </body>
 </html>
