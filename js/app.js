@@ -1,6 +1,7 @@
 const STORAGE_KEY = "rolyfeAcademyFoundationV1";
 const DEFAULT_STATE = { cash: 10000, positions: [], history: [], notes: "" };
 let state = loadState();
+Object.defineProperty(window, "rolyfeAcademyState", { configurable: true, get: () => state });
 
 const $ = (id) => document.getElementById(id);
 const money = (value) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(Number(value) || 0);
